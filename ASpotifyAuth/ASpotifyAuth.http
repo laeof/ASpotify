@@ -1,0 +1,6 @@
+@ASpotifyAuth_HostAddress = http://localhost:5206
+
+GET {{ASpotifyAuth_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
