@@ -5,7 +5,12 @@
       "launchBrowser": true,
       "launchUrl": "swagger",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_ASPOTIFY_DB_SERVER": "127.0.0.1",
+        "ASPNETCORE_ASPOTIFY_DB_PORT": "5432",
+        "ASPNETCORE_ASPOTIFY_DB_USER": "postgres",
+        "ASPNETCORE_ASPOTIFY_DB_PASS": "bt7iC4nN07T0f1nDmyp4ss",
+        "ASPNETCORE_ASPOTIFY_DB_NAME": "Spotify"
       },
       "dotnetRunMessages": true,
       "applicationUrl": "http://localhost:5059"
