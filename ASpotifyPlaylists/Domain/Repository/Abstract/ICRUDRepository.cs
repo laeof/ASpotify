@@ -1,10 +1,13 @@
-﻿namespace ASpotifyPlaylists.Domain.Repository.Abstract
+﻿using ASpotifyPlaylists.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
+
+namespace ASpotifyPlaylists.Domain.Repository.Abstract
 {
-    public interface ICRUDRepository<T>
+    public interface ICRUDRepository<T> where T : class, IEntityBase, new()
     {
-        public Task<T> GetById();
-        public Task<T> Create();
-        public Task<T> ModifyById();
-        public Task<T> RemoveById();
+        Task<T> GetById(Guid id, DbSet<T> dbSet);
+        Task<T> Create(T dto, DbSet<T> dbSet);
+        Task<T> Modify(T dto, DbSet<T> dbSet);
+        Task<T> RemoveById(Guid id, DbSet<T> dbSet);
     }
 }
