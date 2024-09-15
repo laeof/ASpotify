@@ -14,7 +14,7 @@ namespace ASpotifyPlaylists.Controllers
             _playlistService = playlistService;
         }
 
-        [HttpGet]
+        [HttpGet("{id}")]
         public async Task<IActionResult> GetPlaylist(Guid id)
         {
             return Ok(await _playlistService.GetPlaylistById(id));

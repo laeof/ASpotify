@@ -3,6 +3,7 @@ using ASpotifyPlaylists.Domain.Entities;
 using ASpotifyPlaylists.Dto;
 using ASpotifyPlaylists.Helpers;
 using ASpotifyPlaylists.Services.Abstract;
+using System.Threading;
 
 namespace ASpotifyPlaylists.Services.Service
 {
@@ -11,16 +12,14 @@ namespace ASpotifyPlaylists.Services.Service
         private readonly IPlaylistService _playlistService;
         private readonly DataManager _dataManager;
         private readonly ASpotifyDbContext _context;
-        private readonly EntityMapper _entityMapper;
+        private readonly static SemaphoreSlim _semaphoreSlim = new SemaphoreSlim(1, 1);
         public TrackService(IPlaylistService playlistService, 
             DataManager dataManager,
-            ASpotifyDbContext aSpotifyDbContext,
-            EntityMapper entityMapper)
+            ASpotifyDbContext aSpotifyDbContext)
         {
             _playlistService = playlistService;
             _dataManager = dataManager;
             _context = aSpotifyDbContext;
-            _entityMapper = entityMapper;
         }
         public async Task<Track> CreateTrack(TrackDto dto)
         {
@@ -33,14 +32,18 @@ namespace ASpotifyPlaylists.Services.Service
                 ImagePath = dto.ImagePath,
                 UrlPath = dto.UrlPath,
             };
+            await _semaphoreSlim.WaitAsync();
+            try
+            {
+                await _dataManager.Tracks.Create(track, _context.Tracks);
+                await _playlistService.AddToPlaylist(dto.AlbumId, track.Id);
+            }
+            finally
+            {
+                _semaphoreSlim.Release();
+            }
 
-            //add to album
-            await _playlistService.AddToPlaylist(dto.AlbumId, track.Id);
-
-            //add track
-            var newtrack = await _dataManager.Tracks.Create(track, _context.Tracks);
-
-            return newtrack;
+            return track;
         }
 
         public async Task<Track> GetTrackById(Guid id)

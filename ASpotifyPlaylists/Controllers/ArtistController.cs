@@ -1,5 +1,6 @@
 ﻿using ASpotifyPlaylists.Dto;
 using ASpotifyPlaylists.Services.Abstract;
+using ASpotifyPlaylists.Services.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -25,6 +26,11 @@ namespace ASpotifyPlaylists.Controllers
         public async Task<IActionResult> CreateArtist(ArtistDto dto)
         {
             return Ok(await _artistService.CreateArtist(dto));
+        }
+        [HttpPut("addplaylist")]
+        public async Task<IActionResult> AddTrackToPlaylist(Guid artistId, Guid playlistId)
+        {
+            return Ok(await _artistService.AddPlaylist(artistId, playlistId));
         }
         [HttpPut]
         public async Task<IActionResult> ModifyArtist(ArtistDto dto)

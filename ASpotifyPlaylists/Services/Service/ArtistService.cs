@@ -1,6 +1,7 @@
 ﻿using ASpotifyPlaylists.Domain;
 using ASpotifyPlaylists.Domain.Entities;
 using ASpotifyPlaylists.Dto;
+using ASpotifyPlaylists.Helpers;
 using ASpotifyPlaylists.Services.Abstract;
 
 namespace ASpotifyPlaylists.Services.Service
@@ -9,11 +10,14 @@ namespace ASpotifyPlaylists.Services.Service
     {
         private readonly DataManager _dataManager;
         private readonly ASpotifyDbContext _context;
+        private readonly EntityMapper _entityMapper;
         public ArtistService(DataManager dataManager,
-            ASpotifyDbContext aSpotifyDbContext)
+            ASpotifyDbContext aSpotifyDbContext,
+            EntityMapper entityMapper)
         {
             _dataManager = dataManager;
             _context = aSpotifyDbContext;
+            _entityMapper = entityMapper;
         }
         public async Task<Artist> CreateArtist(ArtistDto dto)
         {
@@ -52,6 +56,16 @@ namespace ASpotifyPlaylists.Services.Service
         public async Task<Artist> DeleteArtist(Guid id)
         {
             return await _dataManager.Artists.RemoveById(id, _context.Artists);
+        }
+
+        public async Task<Artist> AddPlaylist(Guid artistId, Guid playlistId)
+        {
+            var artist = await GetArtistById(playlistId);
+            artist.Albums.Add(playlistId);
+
+            await ModifyArtist(_entityMapper.MapArtistDto(artist));
+
+            return artist;
         }
     }
 }

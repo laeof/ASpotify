@@ -11,13 +11,16 @@ namespace ASpotifyPlaylists.Services.Service
         private readonly DataManager _dataManager;
         private readonly ASpotifyDbContext _context;
         private readonly EntityMapper _entityMapper;
+        private readonly IArtistService _artistService;
         public PlaylistService(DataManager dataManager,
             ASpotifyDbContext aSpotifyDbContext,
-            EntityMapper entityMapper)
+            EntityMapper entityMapper,
+            IArtistService artistService)
         {
             _dataManager = dataManager;
             _context = aSpotifyDbContext;
             _entityMapper = entityMapper;
+            _artistService = artistService;
         }
         public async Task<Playlist> CreateArtistPlaylist(PlaylistDto dto)
         {
@@ -45,6 +48,8 @@ namespace ASpotifyPlaylists.Services.Service
                 Tracks = dto.Tracks,
             };
 
+            await _artistService.AddPlaylist(dto.AuthorId, newentity.Id);
+
             var entity = await _dataManager.Playlists.Create(newentity, _context.Playlists);
 
             return entity;
@@ -66,6 +71,7 @@ namespace ASpotifyPlaylists.Services.Service
             entity.Tracks = dto.Tracks;
             entity.UpdatedDate = entity.CreatedDate;
             entity.CreatedDate = dto.CreatedDate;
+            entity.Types = dto.Types;
 
             return await _dataManager.Playlists.Modify(entity, _context.Playlists);
         }

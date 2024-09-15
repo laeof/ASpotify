@@ -20,5 +20,20 @@ namespace ASpotifyPlaylists.Helpers
 
             return dto;
         }
+
+        public ArtistDto MapArtistDto(Artist artist)
+        {
+            var dto = new ArtistDto
+            {
+                Id = artist.Id,
+                Albums = artist.Albums,
+                CreatedDate = artist.CreatedDate,
+                FirstName = artist.FirstName,
+                LastName = artist.LastName,
+                UserName = artist.UserName
+            };
+
+            return dto;
+        }
     }
 }

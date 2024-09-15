@@ -14,7 +14,7 @@ namespace ASpotifyPlaylists.Controllers
             _trackService = trackService;
         }
 
-        [HttpGet]
+        [HttpGet("{id}")]
         public async Task<IActionResult> GetTrack(Guid id)
         {
             return Ok(await _trackService.GetTrackById(id));
