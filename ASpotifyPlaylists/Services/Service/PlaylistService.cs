@@ -11,51 +11,56 @@ namespace ASpotifyPlaylists.Services.Service
         private readonly DataManager _dataManager;
         private readonly ASpotifyDbContext _context;
         private readonly EntityMapper _entityMapper;
+        private readonly IArtistService _artistService; 
+        private readonly ITrackService _trackService;
+        private readonly static SemaphoreSlim _semaphoreSlim = new SemaphoreSlim(1, 1);
         public PlaylistService(DataManager dataManager,
             ASpotifyDbContext aSpotifyDbContext,
-            EntityMapper entityMapper)
+            EntityMapper entityMapper,
+            IArtistService artistService,
+            ITrackService trackService)
         {
             _dataManager = dataManager;
             _context = aSpotifyDbContext;
             _entityMapper = entityMapper;
-        }
-        public async Task<Playlist> CreateArtistPlaylist(PlaylistDto dto)
-        {
-            var newentity = new Playlist
-            {
-                Name = dto.Name,
-                AuthorId = dto.AuthorId,
-                Types = dto.Types,
-                ImagePath = dto.ImagePath,
-                Tracks = dto.Tracks,
-            };
-
-            var entity = await _dataManager.Playlists.Create(newentity, _context.Playlists);
-
-            return entity;
+            _artistService = artistService;
+            _trackService = trackService;
         }
         public async Task<Playlist> CreatePlaylist(PlaylistDto dto)
         {
-            var newentity = new Playlist
+            var newentity = _entityMapper.MapDtoPlaylist(dto);
+
+            await _semaphoreSlim.WaitAsync();
+            try
             {
-                Name = dto.Name,
-                AuthorId = dto.AuthorId,
-                Types = dto.Types,
-                ImagePath = dto.ImagePath,
-                Tracks = dto.Tracks,
-            };
-
-            var entity = await _dataManager.Playlists.Create(newentity, _context.Playlists);
-
-            return entity;
+                await _dataManager.Playlists.Create(newentity, _context.Playlists);
+                await _artistService.AddPlaylist(dto.AuthorId, newentity.Id);
+            }
+            finally
+            {
+                _semaphoreSlim.Release();
+            }
+            return newentity;
         }
 
-        public async Task<Playlist> GetPlaylistById(Guid id)
+        public async Task<PlaylistDto> GetPlaylistById(Guid id)
         {
-            return await _dataManager.Playlists.GetById(id, _context.Playlists);
+            var playlist = await _dataManager.Playlists.GetById(id, _context.Playlists);
+
+            var playlistDto = _entityMapper.MapPlaylistDto(playlist);
+
+            foreach (var track in playlist.Tracks)
+            {
+                var trackDto = await _trackService.GetTrackById(track);
+                playlistDto.Tracks.Add(trackDto);
+            }
+
+            playlistDto.Tracks.Sort((x, y) => x.CreatedDate.CompareTo(y.CreatedDate));
+
+            return playlistDto;
         }
 
-        public async Task<Playlist> ModifyPlaylist(PlaylistDto dto)
+        public async Task<Playlist> ModifyPlaylist(Playlist dto)
         {
             var entity = new Playlist();
 
@@ -64,8 +69,10 @@ namespace ASpotifyPlaylists.Services.Service
             entity.AuthorId = dto.AuthorId;
             entity.ImagePath = dto.ImagePath;
             entity.Tracks = dto.Tracks;
-            entity.UpdatedDate = entity.CreatedDate;
-            entity.CreatedDate = dto.CreatedDate;
+            entity.UpdatedDate = dto.CreatedDate;
+            entity.CreatedDate = DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalMilliseconds;
+            entity.Types = dto.Types;
+            entity.Color = dto.Color;
 
             return await _dataManager.Playlists.Modify(entity, _context.Playlists);
         }
@@ -77,11 +84,13 @@ namespace ASpotifyPlaylists.Services.Service
 
         public async Task<Playlist> AddToPlaylist(Guid playlistId, Guid trackId)
         {
-            var playlist = await GetPlaylistById(playlistId);
+            var playlistDto = await GetPlaylistById(playlistId);
+
+            var playlist = _entityMapper.MapDtoPlaylist(playlistDto);
 
             playlist.Tracks.Add(trackId);
 
-            await ModifyPlaylist(_entityMapper.MapPlaylistDto(playlist));
+            await ModifyPlaylist(playlist);
 
             return playlist;
         }
