@@ -27,6 +27,9 @@ namespace ASpotifyPlaylists.Services.Service
                 LastName = dto.LastName,
                 UserName = dto.UserName,
                 Albums = dto.Albums,
+                CreatedDate = DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalMilliseconds,
+                UpdatedDate = dto.CreatedDate
+
             };
 
             var entity = await _dataManager.Artists.Create(newentity, _context.Artists);
@@ -44,8 +47,8 @@ namespace ASpotifyPlaylists.Services.Service
             var entity = new Artist();
 
             entity.Id = dto.Id;
-            entity.UpdatedDate = entity.CreatedDate;
-            entity.CreatedDate = dto.CreatedDate;
+            entity.UpdatedDate = dto.CreatedDate;
+            entity.CreatedDate = DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalMilliseconds;
             entity.UserName = dto.UserName;
             entity.FirstName = dto.FirstName;
             entity.LastName = dto.LastName;
@@ -60,7 +63,8 @@ namespace ASpotifyPlaylists.Services.Service
 
         public async Task<Artist> AddPlaylist(Guid artistId, Guid playlistId)
         {
-            var artist = await GetArtistById(playlistId);
+            var artist = await GetArtistById(artistId);
+
             artist.Albums.Add(playlistId);
 
             await ModifyArtist(_entityMapper.MapArtistDto(artist));

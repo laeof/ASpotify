@@ -1,4 +1,5 @@
 ﻿using ASpotifyPlaylists.Dto;
+using ASpotifyPlaylists.Helpers;
 using ASpotifyPlaylists.Services.Abstract;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,9 +10,11 @@ namespace ASpotifyPlaylists.Controllers
     public class PlaylistController: ControllerBase
     {
         private readonly IPlaylistService _playlistService;
-        public PlaylistController(IPlaylistService playlistService)
+        private readonly EntityMapper _entityMapper;
+        public PlaylistController(IPlaylistService playlistService, EntityMapper entityMapper)
         {
             _playlistService = playlistService;
+            _entityMapper = entityMapper;
         }
 
         [HttpGet("{id}")]
@@ -33,7 +36,7 @@ namespace ASpotifyPlaylists.Controllers
         [HttpPut]
         public async Task<IActionResult> ModifyPlaylist(PlaylistDto dto)
         {
-            return Ok(await _playlistService.ModifyPlaylist(dto));
+            return Ok(await _playlistService.ModifyPlaylist(_entityMapper.MapDtoPlaylist(dto)));
         }
         [HttpDelete]
         public async Task<IActionResult> RemovePlaylist(Guid id)

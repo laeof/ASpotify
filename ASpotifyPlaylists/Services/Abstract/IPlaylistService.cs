@@ -6,8 +6,8 @@ namespace ASpotifyPlaylists.Services.Abstract
     public interface IPlaylistService
     {
         Task<Playlist> CreatePlaylist(PlaylistDto dto);
-        Task<Playlist> GetPlaylistById(Guid id);
-        Task<Playlist> ModifyPlaylist(PlaylistDto dto);
+        Task<PlaylistDto> GetPlaylistById(Guid id);
+        Task<Playlist> ModifyPlaylist(Playlist dto);
         Task<Playlist> DeletePlaylist(Guid id);
         Task<Playlist> AddToPlaylist(Guid playlistId, Guid trackId);
     }

@@ -1,6 +1,5 @@
 ﻿using ASpotifyPlaylists.Dto;
 using ASpotifyPlaylists.Services.Abstract;
-using ASpotifyPlaylists.Services.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,7 +15,7 @@ namespace ASpotifyPlaylists.Controllers
             _artistService = artistService;
         }
 
-        [HttpGet]
+        [HttpGet("{id}")]
         public async Task<IActionResult> GetArtist(Guid id)
         {
             return Ok(await _artistService.GetArtistById(id));

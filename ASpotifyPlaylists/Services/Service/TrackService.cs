@@ -1,23 +1,18 @@
 ﻿using ASpotifyPlaylists.Domain;
 using ASpotifyPlaylists.Domain.Entities;
 using ASpotifyPlaylists.Dto;
-using ASpotifyPlaylists.Helpers;
 using ASpotifyPlaylists.Services.Abstract;
-using System.Threading;
 
 namespace ASpotifyPlaylists.Services.Service
 {
     public class TrackService : ITrackService
     {
-        private readonly IPlaylistService _playlistService;
         private readonly DataManager _dataManager;
         private readonly ASpotifyDbContext _context;
-        private readonly static SemaphoreSlim _semaphoreSlim = new SemaphoreSlim(1, 1);
-        public TrackService(IPlaylistService playlistService, 
+        public TrackService( 
             DataManager dataManager,
             ASpotifyDbContext aSpotifyDbContext)
         {
-            _playlistService = playlistService;
             _dataManager = dataManager;
             _context = aSpotifyDbContext;
         }
@@ -25,23 +20,19 @@ namespace ASpotifyPlaylists.Services.Service
         {
             var track = new Track
             {
+                Id = dto.Id,
                 Name = dto.Name,
                 AlbumId = dto.AlbumId,
                 ArtistId = dto.ArtistId,
                 Duration = dto.Duration,
                 ImagePath = dto.ImagePath,
                 UrlPath = dto.UrlPath,
+                CreatedDate = DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalMilliseconds,
+                UpdatedDate = dto.CreatedDate
+
             };
-            await _semaphoreSlim.WaitAsync();
-            try
-            {
-                await _dataManager.Tracks.Create(track, _context.Tracks);
-                await _playlistService.AddToPlaylist(dto.AlbumId, track.Id);
-            }
-            finally
-            {
-                _semaphoreSlim.Release();
-            }
+            
+            await _dataManager.Tracks.Create(track, _context.Tracks);
 
             return track;
         }
@@ -62,8 +53,8 @@ namespace ASpotifyPlaylists.Services.Service
             track.Duration = dto.Duration;
             track.ImagePath = dto.ImagePath;
             track.UrlPath = dto.UrlPath;
-            track.UpdatedDate = track.CreatedDate;
-            track.CreatedDate = dto.CreatedDate;
+            track.UpdatedDate = dto.CreatedDate;
+            track.CreatedDate = DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalMilliseconds;
 
             return await _dataManager.Tracks.Modify(track, _context.Tracks);
         }

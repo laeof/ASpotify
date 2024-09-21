@@ -32,7 +32,6 @@ builder.Services.AddDbContext<ASpotifyDbContext>(x => x.UseNpgsql(
     $"Password={Environment.GetEnvironmentVariable("ASPNETCORE_ASPOTIFY_DB_PASS")};" +
     $"Database={Environment.GetEnvironmentVariable("ASPNETCORE_ASPOTIFY_DB_NAME")};"));
 
-
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(builder => {
