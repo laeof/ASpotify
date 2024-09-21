@@ -1,3 +1,7 @@
+using ASpotifyAuth.Domain;
+using ASpotifyAuth.Domain.Entities;
+using ASpotifyAuth.Domain.Repository.Abstract;
+using ASpotifyAuth.Domain.Repository.Entities;
 using ASpotifyAuth.Services.Abstract;
 using ASpotifyAuth.Services.Service;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -11,12 +15,11 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
-    options.AddSecurityDefinition("oauth2", new OpenApiSecurityScheme
+    options.AddSecurityDefinition("jwt", new OpenApiSecurityScheme
     {
         In = ParameterLocation.Header,
         Name = "Authorization",
@@ -39,9 +42,14 @@ builder.Services.AddAuthentication().AddJwtBearer(options =>
 });
 
 //custom services
+
+builder.Services.AddScoped<ICRUDRepository<User>, CRUDRepository<User>>();
+
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IPasswordHasherService, PasswordHasherService>();
+
+builder.Services.AddScoped<DataManager>();
 
 var app = builder.Build();
 

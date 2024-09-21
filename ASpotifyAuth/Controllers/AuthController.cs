@@ -14,20 +14,19 @@ namespace ASpotifyAuth.Controllers
     [ApiController]
     public class AuthController : ControllerBase
     {
-
-        public AuthController(IConfiguration configuration,
-            IUserService userService, 
+        public readonly IUserService _userService;
+        public readonly IPasswordHasherService _passwordHasher;
+        public AuthController(IUserService userService,
             IPasswordHasherService passwordHasherService)
         {
-            _configuration = configuration;
+            _userService = userService;
             _passwordHasher = passwordHasherService;
         }
 
         [HttpPost("register")]
         public ActionResult<User> Register(UserDto request)
         {
-            string passwordHash
-                = _passwordHasher.Hash(request.Password);
+            string passwordHash = _passwordHasher.Hash(request.Password);
 
             user.Email = request.Email;
             user.PasswordHash = passwordHash;

@@ -1,6 +1,6 @@
 ﻿namespace ASpotifyAuth.Domain.Entities
 {
-    public class User: BaseEntity
+    public class User: EntityBase
     {
         public string UserName { get; set; } = string.Empty;
         public string FirstName { get; set; } = string.Empty;
@@ -11,6 +11,6 @@
         public Guid LovedPlaylistId { get; set; } = Guid.Empty;
         public Guid LatestPlaylistId { get; set; } = Guid.Empty;
         public Guid LatestTrackId { get; set; } = Guid.Empty;
-        public IEnumerable<Guid> PlaylistsId { get; set; } = new List<Guid>();
+        public List<Guid> PlaylistsId { get; set; } = new List<Guid>();
     }
 }
