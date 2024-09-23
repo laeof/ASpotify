@@ -6,9 +6,19 @@ namespace ASpotifyAuth.Domain
     public class DataManager
     {
         public ICRUDRepository<User> Users { get; set; }
-        public DataManager(ICRUDRepository<User> Users)
+        public ICRUDRepository<UserRefreshToken> RefreshTokens { get; set; }
+        public IUserRepository UsersRepository {  get; set; }
+        public IRefreshTokenRepository RefreshTokensRepository { get; set; }
+        public DataManager(
+            ICRUDRepository<User> users,
+            IUserRepository usersRepository,
+            ICRUDRepository<UserRefreshToken> refreshTokens,
+            IRefreshTokenRepository refreshTokensRepository)
         {
-            this.Users = Users;
+            Users = users;
+            RefreshTokens = refreshTokens;
+            UsersRepository = usersRepository;
+            RefreshTokensRepository = refreshTokensRepository;
         }
     }
 }
