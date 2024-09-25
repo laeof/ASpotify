@@ -22,6 +22,11 @@ namespace ASpotifyPlaylists.Controllers
         {
             return Ok(await _playlistService.GetPlaylistById(id));
         }
+        [HttpGet("popularplaylists")]
+        public async Task<IActionResult> GetPopularPlaylists()
+        {
+            return Ok(await _playlistService.GetPopularPlaylists());
+        }
 
         [HttpPost]
         public async Task<IActionResult> CreatePlaylist(PlaylistDto dto)
@@ -29,10 +34,12 @@ namespace ASpotifyPlaylists.Controllers
             return Ok(await _playlistService.CreatePlaylist(dto));
         }
         [HttpPut("addtoplaylist")]
-        public async Task<IActionResult> AddTrackToPlaylist(Guid playlistId, Guid trackId)
+        public async Task<IActionResult> AddTrackToPlaylist([FromBody] AddToPlaylist request)
         {
-            return Ok(await _playlistService.AddToPlaylist(playlistId, trackId));
+            return Ok(await _playlistService.AddToPlaylist(request.playlistId, request.trackId));
         }
+        public record AddToPlaylist(Guid playlistId, Guid trackId);
+    
         [HttpPut]
         public async Task<IActionResult> ModifyPlaylist(PlaylistDto dto)
         {

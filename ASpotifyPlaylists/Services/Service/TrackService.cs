@@ -53,8 +53,8 @@ namespace ASpotifyPlaylists.Services.Service
             track.Duration = dto.Duration;
             track.ImagePath = dto.ImagePath;
             track.UrlPath = dto.UrlPath;
-            track.UpdatedDate = dto.CreatedDate;
-            track.CreatedDate = DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalMilliseconds;
+            track.CreatedDate = dto.CreatedDate;
+            track.UpdatedDate = DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalMilliseconds;
 
             return await _dataManager.Tracks.Modify(track, _context.Tracks);
         }

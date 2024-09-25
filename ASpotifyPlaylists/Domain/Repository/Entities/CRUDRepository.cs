@@ -22,7 +22,7 @@ namespace ASpotifyPlaylists.Domain.Repository.Entities
 
         public async Task<T> GetById(Guid id, DbSet<T> dbSet)
         {
-            var Dto = await dbSet.FirstOrDefaultAsync(dto => dto.Id == id);
+            var Dto = await dbSet.AsNoTracking().FirstOrDefaultAsync(dto => dto.Id == id);
 
             if (Dto == null)
                 return new T();
