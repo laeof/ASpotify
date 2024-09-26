@@ -1,6 +1,7 @@
 ﻿using ASpotifyPlaylists.Domain.Entities;
 using ASpotifyPlaylists.Dto;
 using ASpotifyPlaylists.Services.Abstract;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ASpotifyPlaylists.Controllers
@@ -10,14 +11,10 @@ namespace ASpotifyPlaylists.Controllers
     public class TrackController: ControllerBase
     {
         private readonly ITrackService _trackService;
-        private readonly IPlaylistService _playlistService;
-        private readonly static SemaphoreSlim _semaphoreSlim = new SemaphoreSlim(1, 1);
 
-        public TrackController(ITrackService trackService, 
-            IPlaylistService playlistService) 
+        public TrackController(ITrackService trackService) 
         {
             _trackService = trackService;
-            _playlistService = playlistService;
         }
 
         [HttpGet("{id}")]
@@ -27,28 +24,25 @@ namespace ASpotifyPlaylists.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateTrack(TrackDto dto)
+        [Authorize]
+        public IActionResult CreateTrack(TrackDto dto)
         {
-            Track track = new Track();
-            await _semaphoreSlim.WaitAsync();
-            try
-            {
-                track = await _trackService.CreateTrack(dto);
-                await _playlistService.AddToPlaylist(dto.AlbumId, dto.Id);
-            }
-            finally
-            {
-                _semaphoreSlim.Release();
-            }
+            if(_trackService.CreateTrack(dto) == Task.CompletedTask)
+                return Ok();
 
-            return Ok(track);
+            return BadRequest();
         }
         [HttpPut]
-        public async Task<IActionResult> ModifyTrack(TrackDto dto)
+        [Authorize]
+        public IActionResult ModifyTrack(TrackDto dto)
         {
-            return Ok(await _trackService.ModifyTrack(dto));
+            if(_trackService.ModifyTrack(dto) == Task.CompletedTask)
+                return Ok(dto);
+
+            return BadRequest();
         }
         [HttpDelete]
+        [Authorize]
         public async Task<IActionResult> RemoveTrack(Guid id)
         {
             return Ok(await _trackService.DeleteTrack(id));

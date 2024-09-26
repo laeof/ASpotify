@@ -1,6 +1,7 @@
 ﻿using ASpotifyPlaylists.Domain;
 using ASpotifyPlaylists.Domain.Entities;
 using ASpotifyPlaylists.Dto;
+using ASpotifyPlaylists.Helpers;
 using ASpotifyPlaylists.Services.Abstract;
 
 namespace ASpotifyPlaylists.Services.Service
@@ -9,54 +10,54 @@ namespace ASpotifyPlaylists.Services.Service
     {
         private readonly DataManager _dataManager;
         private readonly ASpotifyDbContext _context;
+        private readonly EntityMapper _entityMapper;
+        private readonly IMessageProducer _messageProducer;
+        private readonly ICacheService _cacheService;
         public TrackService( 
             DataManager dataManager,
-            ASpotifyDbContext aSpotifyDbContext)
+            ASpotifyDbContext aSpotifyDbContext,
+            EntityMapper entityMapper,
+            IMessageProducer messageProducer,
+            ICacheService cacheService)
         {
             _dataManager = dataManager;
             _context = aSpotifyDbContext;
+            _entityMapper = entityMapper;
+            _messageProducer = messageProducer;
+            _cacheService = cacheService;
         }
-        public async Task<Track> CreateTrack(TrackDto dto)
+        public Task CreateTrack(TrackDto dto)
         {
-            var track = new Track
-            {
-                Id = dto.Id,
-                Name = dto.Name,
-                AlbumId = dto.AlbumId,
-                ArtistId = dto.ArtistId,
-                Duration = dto.Duration,
-                ImagePath = dto.ImagePath,
-                UrlPath = dto.UrlPath,
-                CreatedDate = DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalMilliseconds,
-                UpdatedDate = dto.CreatedDate
+            var newentity = _entityMapper.MapDtoTrack(dto);
 
-            };
-            
-            await _dataManager.Tracks.Create(track, _context.Tracks);
+            _messageProducer.SendMessage(
+                   new MethodCreate<Track>(newentity, QueueNames.Track));
 
-            return track;
+            _messageProducer.SendMessage(
+                    new MethodAddTrackToPlaylist(newentity.Id, dto.AlbumId));
+
+            return Task.CompletedTask;
         }
 
         public async Task<Track> GetTrackById(Guid id)
         {
-            return await _dataManager.Tracks.GetById(id, _context.Tracks);
+            var entity = _cacheService.GetData<Track>(id);
+
+            if (entity == null) {
+                entity = await _dataManager.Tracks.GetById(id, _context.Tracks);
+            }
+
+            return entity;
         }
 
-        public async Task<Track> ModifyTrack(TrackDto dto)
+        public Task ModifyTrack(TrackDto dto)
         {
-            var track = new Track();
+            var newentity = _entityMapper.MapDtoTrack(dto);
 
-            track.Id = dto.Id;
-            track.Name = dto.Name;
-            //track.AlbumId = dto.AlbumId;
-            track.ArtistId = dto.ArtistId;
-            track.Duration = dto.Duration;
-            track.ImagePath = dto.ImagePath;
-            track.UrlPath = dto.UrlPath;
-            track.CreatedDate = dto.CreatedDate;
-            track.UpdatedDate = DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalMilliseconds;
+            _messageProducer.SendMessage(
+                   new MethodUpdate<Track>(newentity, QueueNames.Track));
 
-            return await _dataManager.Tracks.Modify(track, _context.Tracks);
+            return Task.CompletedTask;
         }
 
         public async Task<Track> DeleteTrack(Guid id)

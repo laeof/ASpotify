@@ -11,41 +11,46 @@ namespace ASpotifyPlaylists.Services.Service
         private readonly DataManager _dataManager;
         private readonly ASpotifyDbContext _context;
         private readonly EntityMapper _entityMapper;
-        private readonly IArtistService _artistService; 
         private readonly ITrackService _trackService;
-        private readonly static SemaphoreSlim _semaphoreSlim = new SemaphoreSlim(1, 1);
+        private readonly ICacheService _cacheService;
+        private readonly IMessageProducer _messageProducer;
+        
         public PlaylistService(DataManager dataManager,
             ASpotifyDbContext aSpotifyDbContext,
             EntityMapper entityMapper,
             IArtistService artistService,
-            ITrackService trackService)
+            ITrackService trackService,
+            IMessageProducer messageProducer,
+            ICacheService cacheService)
         {
             _dataManager = dataManager;
             _context = aSpotifyDbContext;
             _entityMapper = entityMapper;
-            _artistService = artistService;
             _trackService = trackService;
+            _messageProducer = messageProducer;
+            _cacheService = cacheService;
         }
-        public async Task<Playlist> CreatePlaylist(PlaylistDto dto)
+        public Task CreatePlaylist(PlaylistDto dto)
         {
             var newentity = _entityMapper.MapDtoPlaylist(dto);
 
-            await _semaphoreSlim.WaitAsync();
-            try
-            {
-                await _dataManager.Playlists.Create(newentity, _context.Playlists);
-                await _artistService.AddPlaylist(dto.AuthorId, newentity.Id);
-            }
-            finally
-            {
-                _semaphoreSlim.Release();
-            }
-            return newentity;
+            _messageProducer.SendMessage(
+                    new MethodCreate<Playlist>(newentity, QueueNames.Playlist));
+
+            _messageProducer.SendMessage(
+                    new MethodAddPlaylistToUser(newentity.Id, dto.AuthorId));
+
+            return Task.CompletedTask;
         }
 
         public async Task<PlaylistDto> GetPlaylistById(Guid id)
         {
-            var playlist = await _dataManager.Playlists.GetById(id, _context.Playlists);
+            var playlist = _cacheService.GetData<Playlist>(id);
+
+            if (playlist == null)
+            {
+                playlist = await _dataManager.Playlists.GetById(id, _context.Playlists);
+            }
 
             var playlistDto = _entityMapper.MapPlaylistDto(playlist);
 
@@ -68,15 +73,10 @@ namespace ASpotifyPlaylists.Services.Service
                 var trackPlaylistDto = await _dataManager.TrackPlaylists
                     .GetById(trackpl, _context.TrackPlaylists);
 
-                trackPlaylists.Add(trackPlaylistDto);
-            }
+                var track = playlistDto.Tracks.FirstOrDefault(x => x.Id == trackPlaylistDto.TrackId);
 
-            foreach (var trackpl in trackPlaylists)
-            {
-                var track = playlistDto.Tracks.FirstOrDefault(x => x.Id == trackpl.TrackId);
-
-                if(track != null)
-                    track.CreatedDate = trackpl.CreatedDate;
+                if (track != null)
+                    track.CreatedDate = trackPlaylistDto.CreatedDate;
             }
 
             playlistDto.Tracks = playlistDto.Tracks.OrderByDescending(x => x.CreatedDate)!.ToList();
@@ -84,11 +84,14 @@ namespace ASpotifyPlaylists.Services.Service
             return playlistDto;
         }
 
-        public async Task<Playlist> ModifyPlaylist(Playlist dto)
+        public Task ModifyPlaylist(Playlist dto)
         {
             dto.UpdatedDate = DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalMilliseconds;
 
-            return await _dataManager.Playlists.Modify(dto, _context.Playlists);
+            _messageProducer.SendMessage(
+                   new MethodUpdate<Playlist>(dto, QueueNames.Playlist));
+
+            return Task.CompletedTask;
         }
 
         public async Task<Playlist> DeletePlaylist(Guid id)
