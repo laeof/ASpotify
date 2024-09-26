@@ -25,7 +25,7 @@ namespace ASpotifyAuth.Controllers
         {
             return Ok(await _userService.GetUser());
         }
-        [HttpGet("GetUserById")]
+        [HttpGet("GetUserById/{id}")]
         public async Task<IActionResult> GetUserById(Guid id)
         {
             return Ok(await _userService.GetUserById(id));
