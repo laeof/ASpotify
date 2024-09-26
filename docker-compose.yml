@@ -1,0 +1,17 @@
+services:
+  rabbitmq:
+    container_name: "rabbitmq"
+    image: rabbitmq:4.0.2-management
+    environment:
+      - RABBITMQ_DEFAULT_USER=user
+      - RABBITMQ_DEFAULT_PASS=pass
+    ports:
+      #rabbit instance
+      - '5672:5672'
+      #web
+      - '15672:15672'
+  redis:
+    container_name: "redis"
+    image: redis
+    ports:
+      - '6379:6379'

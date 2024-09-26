@@ -1,6 +1,8 @@
-﻿using ASpotifyPlaylists.Dto;
+﻿using ASpotifyPlaylists.Consumers;
+using ASpotifyPlaylists.Dto;
 using ASpotifyPlaylists.Helpers;
 using ASpotifyPlaylists.Services.Abstract;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ASpotifyPlaylists.Controllers
@@ -11,7 +13,8 @@ namespace ASpotifyPlaylists.Controllers
     {
         private readonly IPlaylistService _playlistService;
         private readonly EntityMapper _entityMapper;
-        public PlaylistController(IPlaylistService playlistService, EntityMapper entityMapper)
+        public PlaylistController(IPlaylistService playlistService, 
+            EntityMapper entityMapper)
         {
             _playlistService = playlistService;
             _entityMapper = entityMapper;
@@ -29,11 +32,16 @@ namespace ASpotifyPlaylists.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreatePlaylist(PlaylistDto dto)
+        [Authorize]
+        public IActionResult CreatePlaylist(PlaylistDto dto)
         {
-            return Ok(await _playlistService.CreatePlaylist(dto));
+            if(_playlistService.CreatePlaylist(dto) == Task.CompletedTask)
+                return Ok(dto);
+
+            return BadRequest();
         }
         [HttpPut("addtoplaylist")]
+        [Authorize]
         public async Task<IActionResult> AddTrackToPlaylist([FromBody] AddToPlaylist request)
         {
             return Ok(await _playlistService.AddToPlaylist(request.playlistId, request.trackId));
@@ -41,11 +49,16 @@ namespace ASpotifyPlaylists.Controllers
         public record AddToPlaylist(Guid playlistId, Guid trackId);
     
         [HttpPut]
-        public async Task<IActionResult> ModifyPlaylist(PlaylistDto dto)
+        [Authorize]
+        public IActionResult ModifyPlaylist(PlaylistDto dto)
         {
-            return Ok(await _playlistService.ModifyPlaylist(_entityMapper.MapDtoPlaylist(dto)));
+            if(_playlistService.ModifyPlaylist(_entityMapper.MapDtoPlaylist(dto)) == Task.CompletedTask)
+                return Ok(dto);
+
+            return BadRequest();
         }
         [HttpDelete]
+        [Authorize]
         public async Task<IActionResult> RemovePlaylist(Guid id)
         {
             return Ok(await _playlistService.DeletePlaylist(id));

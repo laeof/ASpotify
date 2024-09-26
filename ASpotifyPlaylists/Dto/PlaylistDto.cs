@@ -4,7 +4,7 @@ namespace ASpotifyPlaylists.Dto
 {
     public class PlaylistDto
     {
-        public Guid Id { get; set; }
+        public Guid Id { get; set; } = Guid.NewGuid();
         public Guid AuthorId { get; set; } = Guid.Empty;
         public double CreatedDate { get; set; } = 0;
         public string Name { get; set; } = string.Empty;

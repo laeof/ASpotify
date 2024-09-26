@@ -10,7 +10,12 @@
         "ASPNETCORE_ASPOTIFY_DB_PORT": "5432",
         "ASPNETCORE_ASPOTIFY_DB_USER": "postgres",
         "ASPNETCORE_ASPOTIFY_DB_PASS": "bt7iC4nN07T0f1nDmyp4ss",
-        "ASPNETCORE_ASPOTIFY_DB_NAME": "Spotify"
+        "ASPNETCORE_ASPOTIFY_DB_NAME": "Spotify",
+        "ASPNETCORE_ASPOTIFY_RABBITMQ_HOSTNAME": "192.168.0.240",
+        "ASPNETCORE_ASPOTIFY_RABBITMQ_USERNAME": "user",
+        "ASPNETCORE_ASPOTIFY_RABBITMQ_PASSWORD": "pass",
+        "ASPNETCORE_ASPOTIFY_REDIS_HOSTNAME": "192.168.0.240",
+        "ASPNETCORE_ASPOTIFY_REDIS_PORT": "6379"
       },
       "dotnetRunMessages": true,
       "applicationUrl": "http://localhost:5059"
