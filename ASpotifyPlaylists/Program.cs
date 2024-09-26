@@ -45,13 +45,15 @@ builder.Services.AddSingleton<IConnectionFactory>(cf =>
 
 builder.Services.AddScoped<IMessageProducer, MessageProducer>();
 builder.Services.AddSingleton<ArtistConsumer>();
+builder.Services.AddSingleton<TrackConsumer>();
 builder.Services.AddSingleton<PlaylistConsumer>();
 
 //redis
 
 builder.Services.AddStackExchangeRedisCache(option =>
 {
-    option.Configuration = "localhost:6379";
+    option.Configuration = Environment.GetEnvironmentVariable("ASPNETCORE_ASPOTIFY_REDIS_HOSTNAME")
+    + ":" + Environment.GetEnvironmentVariable("ASPNETCORE_ASPOTIFY_REDIS_PORT");
     option.InstanceName = "default";
 });
 
@@ -78,6 +80,7 @@ var app = builder.Build();
 
 app.Services.GetRequiredService<ArtistConsumer>();
 app.Services.GetRequiredService<PlaylistConsumer>();
+app.Services.GetRequiredService<TrackConsumer>();
 
 if (app.Environment.IsDevelopment())
 {

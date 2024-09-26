@@ -45,6 +45,7 @@ namespace ASpotifyPlaylists.Services.Service
 
             if (entity == null) {
                 entity = await _dataManager.Tracks.GetById(id, _context.Tracks);
+                _cacheService.SetData(id, entity);
             }
 
             return entity;

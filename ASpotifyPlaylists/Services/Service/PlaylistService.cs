@@ -50,6 +50,7 @@ namespace ASpotifyPlaylists.Services.Service
             if (playlist == null)
             {
                 playlist = await _dataManager.Playlists.GetById(id, _context.Playlists);
+                _cacheService.SetData(id, playlist);
             }
 
             var playlistDto = _entityMapper.MapPlaylistDto(playlist);
