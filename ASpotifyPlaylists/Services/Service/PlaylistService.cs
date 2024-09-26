@@ -55,26 +55,40 @@ namespace ASpotifyPlaylists.Services.Service
                 playlistDto.Tracks.Add(trackDto);
             }
 
-            playlistDto.Tracks.Sort((x, y) => x.CreatedDate.CompareTo(y.CreatedDate));
+            if (playlist.Types != PlaylistTypes.Playlist)
+            {
+                playlistDto.Tracks.Sort((x, y) => x.CreatedDate.CompareTo(y.CreatedDate));
+                return playlistDto;
+            }
+
+            var trackPlaylists = new List<TrackPlaylist>();
+
+            foreach (var trackpl in playlist.TrackPlaylist)
+            {
+                var trackPlaylistDto = await _dataManager.TrackPlaylists
+                    .GetById(trackpl, _context.TrackPlaylists);
+
+                trackPlaylists.Add(trackPlaylistDto);
+            }
+
+            foreach (var trackpl in trackPlaylists)
+            {
+                var track = playlistDto.Tracks.FirstOrDefault(x => x.Id == trackpl.TrackId);
+
+                if(track != null)
+                    track.CreatedDate = trackpl.CreatedDate;
+            }
+
+            playlistDto.Tracks = playlistDto.Tracks.OrderByDescending(x => x.CreatedDate)!.ToList();
 
             return playlistDto;
         }
 
         public async Task<Playlist> ModifyPlaylist(Playlist dto)
         {
-            var entity = new Playlist();
+            dto.UpdatedDate = DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalMilliseconds;
 
-            entity.Id = dto.Id;
-            entity.Name = dto.Name;
-            entity.AuthorId = dto.AuthorId;
-            entity.ImagePath = dto.ImagePath;
-            entity.Tracks = dto.Tracks;
-            entity.UpdatedDate = dto.CreatedDate;
-            entity.CreatedDate = DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalMilliseconds;
-            entity.Types = dto.Types;
-            entity.Color = dto.Color;
-
-            return await _dataManager.Playlists.Modify(entity, _context.Playlists);
+            return await _dataManager.Playlists.Modify(dto, _context.Playlists);
         }
 
         public async Task<Playlist> DeletePlaylist(Guid id)
@@ -84,15 +98,43 @@ namespace ASpotifyPlaylists.Services.Service
 
         public async Task<Playlist> AddToPlaylist(Guid playlistId, Guid trackId)
         {
-            var playlistDto = await GetPlaylistById(playlistId);
-
-            var playlist = _entityMapper.MapDtoPlaylist(playlistDto);
+            var playlist = await _dataManager.Playlists.GetById(playlistId, _context.Playlists);
 
             playlist.Tracks.Add(trackId);
+
+            if (playlist.Types != PlaylistTypes.Playlist)
+            {
+                await ModifyPlaylist(playlist);
+
+                return playlist;
+            }
+
+            var trackPlaylist = new TrackPlaylist
+            {
+                TrackId = trackId,
+                PlaylistId = playlistId,
+                CreatedDate = DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalMilliseconds
+            };
+
+            await _dataManager.TrackPlaylists.Create(trackPlaylist, _context.TrackPlaylists);
+            
+            playlist.TrackPlaylist.Add(trackPlaylist.Id);
 
             await ModifyPlaylist(playlist);
 
             return playlist;
+        }
+
+        public async Task<List<PlaylistDto>> GetPopularPlaylists()
+        {
+            var playlists = await _dataManager.PlaylistsRepository.GetPopular();
+
+            var playlistDto = new List<PlaylistDto>();
+
+            foreach (var playlist in playlists)
+                playlistDto.Add(_entityMapper.MapPlaylistDto(playlist));
+
+            return playlistDto;
         }
     }
 }

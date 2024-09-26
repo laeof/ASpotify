@@ -47,8 +47,8 @@ namespace ASpotifyPlaylists.Services.Service
             var entity = new Artist();
 
             entity.Id = dto.Id;
-            entity.UpdatedDate = dto.CreatedDate;
-            entity.CreatedDate = DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalMilliseconds;
+            entity.CreatedDate = dto.CreatedDate;
+            entity.UpdatedDate = DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalMilliseconds;
             entity.UserName = dto.UserName;
             entity.FirstName = dto.FirstName;
             entity.LastName = dto.LastName;

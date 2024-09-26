@@ -17,20 +17,24 @@ builder.Services.AddTransient<EntityMapper>();
 
 builder.Services.AddScoped<DataManager>();
 
+builder.Services.AddScoped<ICRUDRepository<TrackPlaylist>, CRUDRepository<TrackPlaylist>>();
 builder.Services.AddScoped<ICRUDRepository<Playlist>, CRUDRepository<Playlist>>();
 builder.Services.AddScoped<ICRUDRepository<Track>, CRUDRepository<Track>>();
 builder.Services.AddScoped<ICRUDRepository<Artist>, CRUDRepository<Artist>>();
+builder.Services.AddScoped<IPlaylistRepository, PlaylistRepository>();
 
 builder.Services.AddScoped<IArtistService, ArtistService>();
 builder.Services.AddScoped<ITrackService, TrackService>();
 builder.Services.AddScoped<IPlaylistService, PlaylistService>();
 
-builder.Services.AddDbContext<ASpotifyDbContext>(x => x.UseNpgsql(
-    $"Host={Environment.GetEnvironmentVariable("ASPNETCORE_ASPOTIFY_DB_SERVER")};" +
-    $"Port={Environment.GetEnvironmentVariable("ASPNETCORE_ASPOTIFY_DB_PORT")};" +
-    $"Username={Environment.GetEnvironmentVariable("ASPNETCORE_ASPOTIFY_DB_USER")};" +
-    $"Password={Environment.GetEnvironmentVariable("ASPNETCORE_ASPOTIFY_DB_PASS")};" +
-    $"Database={Environment.GetEnvironmentVariable("ASPNETCORE_ASPOTIFY_DB_NAME")};"));
+//builder.Services.AddDbContext<ASpotifyDbContext>(x => x.UseNpgsql(
+//    $"Host={Environment.GetEnvironmentVariable("ASPNETCORE_ASPOTIFY_DB_SERVER")};" +
+//    $"Port={Environment.GetEnvironmentVariable("ASPNETCORE_ASPOTIFY_DB_PORT")};" +
+//    $"Username={Environment.GetEnvironmentVariable("ASPNETCORE_ASPOTIFY_DB_USER")};" +
+//    $"Password={Environment.GetEnvironmentVariable("ASPNETCORE_ASPOTIFY_DB_PASS")};" +
+//    $"Database={Environment.GetEnvironmentVariable("ASPNETCORE_ASPOTIFY_DB_NAME")};"));
+
+builder.Services.AddDbContext<ASpotifyDbContext>(x => x.UseNpgsql("Host=127.0.0.1;Port=5432;Username=postgres;Password=bt7iC4nN07T0f1nDmyp4ss;Database=Spotify"));
 
 builder.Services.AddCors(options =>
 {

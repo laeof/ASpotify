@@ -9,6 +9,7 @@ namespace ASpotifyPlaylists.Domain
         public DbSet<Track> Tracks { get; set; }
         public DbSet<Artist> Artists { get; set; }
         public DbSet<Playlist> Playlists { get; set; }
+        public DbSet<TrackPlaylist> TrackPlaylists { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Artist>().ToTable("Users");
