@@ -47,5 +47,15 @@ namespace ASpotifyAuth.Services.Service
 
             return await _dataManager.Users.GetById(Guid.Parse(userid), _context.Users);
         }
+
+        public async Task<User> GetUserById(Guid id)
+        {
+            var user = await _dataManager.Users.GetById(id, _context.Users);
+
+            if (user == null)
+                throw new Exception("UserServiceException:NoUser");
+
+            return user;
+        }
     }
 }
