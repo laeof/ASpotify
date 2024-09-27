@@ -7,6 +7,8 @@ using Newtonsoft.Json;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace ASpotifyPlaylists.Consumers
 {
@@ -14,7 +16,7 @@ namespace ASpotifyPlaylists.Consumers
     {
         private readonly EventingBasicConsumer _eventingBasicConsumer;
         private readonly IServiceScopeFactory _serviceScopeFactory;
-        private readonly IConnection _connection;
+        private readonly IConnection _connection; 
         public PlaylistConsumer(
             RabbitMQ.Client.IConnectionFactory connectionFactory,
             IServiceScopeFactory serviceScopeFactory)
@@ -52,7 +54,7 @@ namespace ASpotifyPlaylists.Consumers
                         break;
                     case Dto.Action.AddtrackToPlaylist:
                         await AddTrackToPlaylist(JsonConvert
-                            .DeserializeObject<AddTrackToPlaylist>(json.Method.ToString()!)!);
+                            .DeserializeObject<AddTracksToPlaylist>(json.Method.ToString()!)!);
                         break;
                     case Dto.Action.CreateLikedPlaylist:
                         await CreateLikedPlaylist(JsonConvert
@@ -88,22 +90,20 @@ namespace ASpotifyPlaylists.Consumers
                 var dataManager = scope.ServiceProvider.GetRequiredService<DataManager>();
                 var cacheService = scope.ServiceProvider.GetRequiredService<ICacheService>();
 
-                cacheService.SetData(dto.Id, dto);
+                cacheService.SetData(dto.Id, dto); 
                 playlist = await dataManager.Playlists.Modify(dto, context.Playlists);
             }
 
             return playlist;
         }
 
-        public async Task AddTrackToPlaylist(AddTrackToPlaylist dto)
+        public async Task AddTrackToPlaylist(AddTracksToPlaylist dto)
         {
             using (var scope = _serviceScopeFactory.CreateScope())
             {
                 var playlistService = scope.ServiceProvider.GetRequiredService<IPlaylistService>();
                 await playlistService.AddToPlaylist(dto.PlaylistId, dto.TrackId);
             }
-
-            return;
         }
 
         public async Task<Playlist> CreateLikedPlaylist(CreateLikedPlaylist dto)

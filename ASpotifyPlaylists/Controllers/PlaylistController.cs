@@ -44,7 +44,8 @@ namespace ASpotifyPlaylists.Controllers
         [Authorize]
         public async Task<IActionResult> AddTrackToPlaylist([FromBody] AddToPlaylist request)
         {
-            return Ok(await _playlistService.AddToPlaylist(request.playlistId, request.trackId));
+            return Ok(await _playlistService.AddToPlaylist(request.playlistId,
+                new List<Guid> { request.trackId }));
         }
         public record AddToPlaylist(Guid playlistId, Guid trackId);
     

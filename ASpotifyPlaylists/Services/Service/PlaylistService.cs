@@ -71,8 +71,14 @@ namespace ASpotifyPlaylists.Services.Service
 
             foreach (var trackpl in playlist.TrackPlaylist)
             {
-                var trackPlaylistDto = await _dataManager.TrackPlaylists
-                    .GetById(trackpl, _context.TrackPlaylists);
+                var trackPlaylistDto = _cacheService.GetData<TrackPlaylist>(trackpl);
+
+                if(trackPlaylistDto == null)
+                {
+                    trackPlaylistDto = await _dataManager.TrackPlaylists
+                        .GetById(trackpl, _context.TrackPlaylists);
+                    _cacheService.SetData(trackpl, trackPlaylistDto);
+                }
 
                 var track = playlistDto.Tracks.FirstOrDefault(x => x.Id == trackPlaylistDto.TrackId);
 
@@ -100,31 +106,37 @@ namespace ASpotifyPlaylists.Services.Service
             return await _dataManager.Playlists.RemoveById(id, _context.Playlists);
         }
 
-        public async Task<Playlist> AddToPlaylist(Guid playlistId, Guid trackId)
+        public async Task<Playlist> AddToPlaylist(Guid playlistId, List<Guid> listTrackId)
         {
             var playlist = await _dataManager.Playlists.GetById(playlistId, _context.Playlists);
 
-            playlist.Tracks.Add(trackId);
+            foreach(var track in listTrackId)
+                playlist.Tracks.Add(track);
 
             if (playlist.Types != PlaylistTypes.Playlist)
             {
-                await ModifyPlaylist(playlist);
+                _messageProducer.SendMessage(
+                    new MethodUpdate<Playlist>(playlist, QueueNames.Playlist));
 
                 return playlist;
             }
 
-            var trackPlaylist = new TrackPlaylist
+            foreach(var track in listTrackId)
             {
-                TrackId = trackId,
-                PlaylistId = playlistId,
-                CreatedDate = DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalMilliseconds
-            };
+                var trackPlaylist = new TrackPlaylist
+                {
+                    TrackId = track,
+                    PlaylistId = playlistId,
+                    CreatedDate = DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalMilliseconds
+                };
 
-            await _dataManager.TrackPlaylists.Create(trackPlaylist, _context.TrackPlaylists);
-            
-            playlist.TrackPlaylist.Add(trackPlaylist.Id);
+                _cacheService.SetData(trackPlaylist.Id, trackPlaylist);
+                playlist.TrackPlaylist.Add(trackPlaylist.Id);
+                await _dataManager.TrackPlaylists.Create(trackPlaylist, _context.TrackPlaylists);
+            }
 
-            await ModifyPlaylist(playlist);
+            _messageProducer.SendMessage(
+                    new MethodUpdate<Playlist>(playlist, QueueNames.Playlist));
 
             return playlist;
         }
