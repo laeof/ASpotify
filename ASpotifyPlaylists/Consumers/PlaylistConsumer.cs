@@ -121,7 +121,9 @@ namespace ASpotifyPlaylists.Consumers
             {
                 var playlistService = scope.ServiceProvider.GetRequiredService<IPlaylistService>();
                 var entityMapper = scope.ServiceProvider.GetRequiredService<EntityMapper>();
+                var messageProducer = scope.ServiceProvider.GetRequiredService<IMessageProducer>();
 
+                messageProducer.SendMessage(new MethodAddPlaylistAsLiked(playlist.Id, playlist.AuthorId));
                 await playlistService.CreatePlaylist(entityMapper.MapPlaylistDto(playlist));
             }
 

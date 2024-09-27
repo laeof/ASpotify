@@ -9,7 +9,7 @@ namespace ASpotifyAuth.Services.Abstract
         Task<bool> CheckExistsEmail(string email);
         Task<bool> CheckValidUsername(string username);
         Task<bool> CheckValidPassword(LoginDto dto);
-        Task<User> Register(RegisterDto dto);
+        User Register(RegisterDto dto);
         Task<User> GetUserAsync(LoginDto dto);
         Task<UserRefreshToken> AddUserRefreshTokens(UserRefreshToken user);
         Task<UserRefreshToken> GetSavedRefreshTokens(Guid id, string refreshtoken);

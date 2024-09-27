@@ -6,6 +6,7 @@
       "launchUrl": "swagger",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNET_SECRETKEYSPOTIFY": "qweqweqweqweqweqweqweqweqweqweqweqwe",
         "ASPNETCORE_ASPOTIFY_DB_SERVER": "127.0.0.1",
         "ASPNETCORE_ASPOTIFY_DB_PORT": "5432",
         "ASPNETCORE_ASPOTIFY_DB_USER": "postgres",

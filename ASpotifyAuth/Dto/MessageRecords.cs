@@ -1,4 +1,4 @@
-﻿namespace ASpotifyPlaylists.Dto
+﻿namespace ASpotifyAuth.Dto
 {
     //message data
     public record MessageDto<T>(T Method, QueueNames QueueNames, Action Action);
@@ -30,5 +30,4 @@
     public record AddPlaylistToUser(Guid PlaylistId, Guid ArtistId);
     public record AddTrackToPlaylist(Guid TrackId, Guid PlaylistId);
     public record CreateLikedPlaylist(Guid UserId);
-
 }

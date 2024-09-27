@@ -16,16 +16,19 @@ namespace ASpotifyAuth.Services.Service
         private readonly DataManager _dataManager;
         private readonly ASpotifyDbContext _context;
         private readonly IPasswordHasherService _passwordHasher;
+        private readonly IMessageProducer _messageProducer;
         public AccountService(DataManager dataManager,
             ASpotifyDbContext context,
-            IPasswordHasherService passwordHasher) 
+            IPasswordHasherService passwordHasher,
+            IMessageProducer messageProducer) 
         {
             _dataManager = dataManager;
             _context = context;
             _passwordHasher = passwordHasher;
+            _messageProducer = messageProducer;
         }
 
-        public async Task<User> Register(RegisterDto dto)
+        public User Register(RegisterDto dto)
         {
             var newentity = new User
             {
@@ -36,7 +39,8 @@ namespace ASpotifyAuth.Services.Service
                 CreatedDate = DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalMilliseconds,
             };
 
-            await _dataManager.Users.Create(newentity, _context.Users);
+            _messageProducer.SendMessage(
+                   new MethodCreate<User>(newentity, QueueNames.User));
 
             return newentity;
         }
@@ -84,8 +88,8 @@ namespace ASpotifyAuth.Services.Service
 
         public async Task<UserRefreshToken> GetSavedRefreshTokens(Guid id, string refreshtoken)
         {
-            var tokens = await _dataManager.RefreshTokensRepository.
-                GetRefreshTokensByUserId(id);
+            var tokens = await _dataManager.RefreshTokensRepository
+                .GetRefreshTokensByUserId(id);
 
             UserRefreshToken? token = null;
 

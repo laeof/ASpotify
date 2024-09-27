@@ -1,3 +1,4 @@
+using ASpotifyAuth.Consumers;
 using ASpotifyAuth.Domain;
 using ASpotifyAuth.Domain.Entities;
 using ASpotifyAuth.Domain.Repository.Abstract;
@@ -9,6 +10,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using RabbitMQ.Client;
 using Swashbuckle.AspNetCore.Filters;
 using System;
 using System.Text;
@@ -67,6 +69,22 @@ builder.Services.AddAuthentication(x =>
 
 builder.Services.AddHttpContextAccessor();
 
+//rabbit
+
+builder.Services.AddSingleton<IConnectionFactory>(cf =>
+{
+    return new ConnectionFactory()
+    {
+        HostName = Environment.GetEnvironmentVariable("ASPNETCORE_ASPOTIFY_RABBITMQ_HOSTNAME"),
+        UserName = Environment.GetEnvironmentVariable("ASPNETCORE_ASPOTIFY_RABBITMQ_USERNAME"),
+        Password = Environment.GetEnvironmentVariable("ASPNETCORE_ASPOTIFY_RABBITMQ_PASSWORD"),
+        VirtualHost = "/"
+    };
+});
+
+builder.Services.AddScoped<IMessageProducer, MessageProducer>();
+builder.Services.AddSingleton<UserConsumer>();
+
 //custom services
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -100,6 +118,8 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+app.Services.GetRequiredService<UserConsumer>();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

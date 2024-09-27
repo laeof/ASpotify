@@ -65,7 +65,7 @@ namespace ASpotifyAuth.Controllers
             if (validUsername)
                 return BadRequest("UsernameValidationError:AlreadyExists");
 
-            var newuser = await _accountService.Register(request);
+            var newuser = _accountService.Register(request);
 
             return Ok(newuser);
         }

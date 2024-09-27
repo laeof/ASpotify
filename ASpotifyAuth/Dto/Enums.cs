@@ -1,12 +1,5 @@
-﻿namespace ASpotifyPlaylists.Dto
+﻿namespace ASpotifyAuth.Dto
 {
-    public enum PlaylistTypes
-    {
-        Playlist = 0,
-        Album = 1,
-        Single = 2,
-    }
-
     public enum QueueNames
     {
         Playlist = 0,
