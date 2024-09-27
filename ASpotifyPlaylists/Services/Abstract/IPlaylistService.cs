@@ -10,6 +10,6 @@ namespace ASpotifyPlaylists.Services.Abstract
         Task<List<PlaylistDto>> GetPopularPlaylists();
         Task ModifyPlaylist(Playlist dto);
         Task<Playlist> DeletePlaylist(Guid id);
-        Task<Playlist> AddToPlaylist(Guid playlistId, Guid trackId);
+        Task<Playlist> AddToPlaylist(Guid playlistId, List<Guid> listTrackId);
     }
 }

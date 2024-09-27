@@ -25,12 +25,9 @@ namespace ASpotifyPlaylists.Controllers
 
         [HttpPost]
         [Authorize]
-        public IActionResult CreateTrack(TrackDto dto)
+        public IActionResult CreateTrack(List<TrackDto> dto)
         {
-            if(_trackService.CreateTrack(dto) == Task.CompletedTask)
-                return Ok();
-
-            return BadRequest();
+            return Ok(_trackService.CreateTrack(dto));
         }
         [HttpPut]
         [Authorize]

@@ -26,15 +26,21 @@ namespace ASpotifyPlaylists.Services.Service
             _messageProducer = messageProducer;
             _cacheService = cacheService;
         }
-        public Task CreateTrack(TrackDto dto)
+        public Task CreateTrack(List<TrackDto> dto)
         {
-            var newentity = _entityMapper.MapDtoTrack(dto);
+            foreach (var track in dto)
+            {
+                var newentity = _entityMapper.MapDtoTrack(track);
+                newentity.CreatedDate = DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalMilliseconds;
+
+                _messageProducer.SendMessage(
+                        new MethodCreate<Track>(newentity, QueueNames.Track));
+            }
 
             _messageProducer.SendMessage(
-                   new MethodCreate<Track>(newentity, QueueNames.Track));
-
-            _messageProducer.SendMessage(
-                    new MethodAddTrackToPlaylist(newentity.Id, dto.AlbumId));
+                    new MethodAddTracksToPlaylist(
+                        dto.Select(x => x.Id).ToList(), 
+                        dto[0].AlbumId));
 
             return Task.CompletedTask;
         }
