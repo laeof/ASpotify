@@ -4,5 +4,7 @@
     {
         T? GetData<T>(Guid id);
         void SetData<T>(Guid id, T data);
+        void RemoveData(Guid id);
+
     }
 }

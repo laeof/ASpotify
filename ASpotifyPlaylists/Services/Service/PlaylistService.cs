@@ -45,50 +45,11 @@ namespace ASpotifyPlaylists.Services.Service
 
         public async Task<PlaylistDto> GetPlaylistById(Guid id)
         {
-            var playlist = _cacheService.GetData<Playlist>(id);
+            var playlist = await GetPlaylistWithId(id);
 
-            if (playlist == null)
-            {
-                playlist = await _dataManager.Playlists.GetById(id, _context.Playlists);
-                _cacheService.SetData(id, playlist);
-            }
+            var playlistDto = await GetFullTrackInfo(playlist);
 
-            var playlistDto = _entityMapper.MapPlaylistDto(playlist);
-
-            foreach (var track in playlist.Tracks)
-            {
-                var trackDto = await _trackService.GetTrackById(track);
-                playlistDto.Tracks.Add(trackDto);
-            }
-
-            if (playlist.Types != PlaylistTypes.Playlist)
-            {
-                playlistDto.Tracks.Sort((x, y) => x.CreatedDate.CompareTo(y.CreatedDate));
-                return playlistDto;
-            }
-
-            var trackPlaylists = new List<TrackPlaylist>();
-
-            foreach (var trackpl in playlist.TrackPlaylist)
-            {
-                var trackPlaylistDto = _cacheService.GetData<TrackPlaylist>(trackpl);
-
-                if(trackPlaylistDto == null)
-                {
-                    trackPlaylistDto = await _dataManager.TrackPlaylists
-                        .GetById(trackpl, _context.TrackPlaylists);
-                    _cacheService.SetData(trackpl, trackPlaylistDto);
-                }
-
-                var track = playlistDto.Tracks.FirstOrDefault(x => x.Id == trackPlaylistDto.TrackId);
-
-                if (track != null)
-                    track.CreatedDate = trackPlaylistDto.CreatedDate;
-            }
-
-            playlistDto.Tracks = playlistDto.Tracks.OrderByDescending(x => x.CreatedDate)!.ToList();
-
-            return playlistDto;
+            return await OrganizeTracksByType(playlist, playlistDto);
         }
 
         public Task ModifyPlaylist(Playlist dto)
@@ -106,11 +67,47 @@ namespace ASpotifyPlaylists.Services.Service
             return await _dataManager.Playlists.RemoveById(id, _context.Playlists);
         }
 
-        public async Task<Playlist> AddToPlaylist(Guid playlistId, List<Guid> listTrackId)
+        public async Task<PlaylistDto> RemoveFromPlaylist(Guid playlistId, List<Guid> listTrackId)
         {
-            var playlist = await _dataManager.Playlists.GetById(playlistId, _context.Playlists);
+            var playlist = await GetPlaylistWithId(playlistId);
+            
+            foreach (var track in listTrackId)
+            {
+                playlist.Tracks.Remove(track);
+            }
 
-            foreach(var track in listTrackId)
+            //copy list to prevent an exception
+            var trackPlaylist = new List<Guid>(playlist.TrackPlaylist);
+
+            foreach (var trackpl in trackPlaylist)
+            {
+                var trackPlaylistDto = _cacheService.GetData<TrackPlaylist>(trackpl);
+
+                if (trackPlaylistDto == null)
+                    trackPlaylistDto = await _dataManager.TrackPlaylists
+                        .GetById(trackpl, _context.TrackPlaylists);
+
+                if (listTrackId.Contains(trackPlaylistDto.TrackId))
+                {
+                    playlist.TrackPlaylist.Remove(trackPlaylistDto.Id);
+                    _cacheService.RemoveData(trackpl);
+                    await _dataManager.TrackPlaylists.RemoveById(trackPlaylistDto.Id, _context.TrackPlaylists);
+                }
+            }
+
+            _messageProducer.SendMessage(
+                new MethodUpdate<Playlist>(playlist, QueueNames.Playlist));
+
+            var playlistDto = await GetFullTrackInfo(playlist);
+
+            return await OrganizeTracksByType(playlist, playlistDto);
+        }
+
+        public async Task<PlaylistDto> AddToPlaylist(Guid playlistId, List<Guid> listTrackId)
+        {
+            var playlist = await GetPlaylistWithId(playlistId);
+
+            foreach (var track in listTrackId)
                 playlist.Tracks.Add(track);
 
             if (playlist.Types != PlaylistTypes.Playlist)
@@ -118,7 +115,7 @@ namespace ASpotifyPlaylists.Services.Service
                 _messageProducer.SendMessage(
                     new MethodUpdate<Playlist>(playlist, QueueNames.Playlist));
 
-                return playlist;
+                return _entityMapper.MapPlaylistDto(playlist);
             }
 
             foreach(var track in listTrackId)
@@ -137,8 +134,10 @@ namespace ASpotifyPlaylists.Services.Service
 
             _messageProducer.SendMessage(
                     new MethodUpdate<Playlist>(playlist, QueueNames.Playlist));
+            
+            var playlistDto = await GetFullTrackInfo(playlist);
 
-            return playlist;
+            return await OrganizeTracksByType(playlist, playlistDto);
         }
 
         public async Task<List<PlaylistDto>> GetPopularPlaylists()
@@ -149,6 +148,64 @@ namespace ASpotifyPlaylists.Services.Service
 
             foreach (var playlist in playlists)
                 playlistDto.Add(_entityMapper.MapPlaylistDto(playlist));
+
+            return playlistDto;
+        }
+    
+        private async Task<Playlist> GetPlaylistWithId(Guid playlistId)
+        {
+            var playlist = _cacheService.GetData<Playlist>(playlistId);
+
+            if (playlist == null)
+            {
+                playlist = await _dataManager.Playlists.GetById(playlistId, _context.Playlists);
+                _cacheService.SetData(playlistId, playlist);
+            }
+
+            return playlist;
+        }
+
+        private async Task<PlaylistDto> GetFullTrackInfo(Playlist playlist)
+        {
+            var playlistDto = _entityMapper.MapPlaylistDto(playlist);
+
+            foreach (var track in playlist.Tracks)
+            {
+                var trackDto = await _trackService.GetTrackById(track);
+                playlistDto.Tracks.Add(trackDto);
+            }
+
+            return playlistDto;
+        }
+
+        private async Task<PlaylistDto> OrganizeTracksByType(Playlist playlist, PlaylistDto playlistDto)
+        {
+            if (playlist.Types != PlaylistTypes.Playlist)
+            {
+                playlistDto.Tracks.Sort((x, y) => x.CreatedDate.CompareTo(y.CreatedDate));
+                return playlistDto;
+            }
+
+            var trackPlaylists = new List<TrackPlaylist>();
+
+            foreach (var trackpl in playlist.TrackPlaylist)
+            {
+                var trackPlaylistDto = _cacheService.GetData<TrackPlaylist>(trackpl);
+
+                if (trackPlaylistDto == null)
+                {
+                    trackPlaylistDto = await _dataManager.TrackPlaylists
+                        .GetById(trackpl, _context.TrackPlaylists);
+                    _cacheService.SetData(trackpl, trackPlaylistDto);
+                }
+
+                var track = playlistDto.Tracks.FirstOrDefault(x => x.Id == trackPlaylistDto.TrackId);
+
+                if (track != null)
+                    track.CreatedDate = trackPlaylistDto.CreatedDate;
+            }
+
+            playlistDto.Tracks = playlistDto.Tracks.OrderByDescending(x => x.CreatedDate)!.ToList();
 
             return playlistDto;
         }

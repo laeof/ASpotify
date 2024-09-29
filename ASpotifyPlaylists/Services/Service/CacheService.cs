@@ -31,5 +31,10 @@ namespace ASpotifyPlaylists.Services.Service
 
             _cache.SetString(id.ToString(), JsonSerializer.Serialize(data), options);
         }
+
+        public void RemoveData(Guid id)
+        {
+            _cache.Remove(id.ToString());
+        }
     }
 }

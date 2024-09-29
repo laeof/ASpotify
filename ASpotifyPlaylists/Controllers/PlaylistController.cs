@@ -48,7 +48,13 @@ namespace ASpotifyPlaylists.Controllers
                 new List<Guid> { request.trackId }));
         }
         public record AddToPlaylist(Guid playlistId, Guid trackId);
-    
+        [HttpPut("removefromplaylist")]
+        [Authorize]
+        public async Task<IActionResult> RemoveTrackToPlaylist([FromBody] AddToPlaylist request)
+        {
+            return Ok(await _playlistService.RemoveFromPlaylist(request.playlistId,
+                new List<Guid> { request.trackId }));
+        }
         [HttpPut]
         [Authorize]
         public IActionResult ModifyPlaylist(PlaylistDto dto)
