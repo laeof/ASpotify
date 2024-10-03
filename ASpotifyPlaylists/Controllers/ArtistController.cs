@@ -15,7 +15,7 @@ namespace ASpotifyPlaylists.Controllers
             _artistService = artistService;
         }
 
-        [HttpGet]
+        [HttpGet("{id}")]
         public async Task<IActionResult> GetArtist(Guid id)
         {
             return Ok(await _artistService.GetArtistById(id));
@@ -26,7 +26,14 @@ namespace ASpotifyPlaylists.Controllers
         {
             return Ok(await _artistService.CreateArtist(dto));
         }
+        [HttpPut("addplaylist")]
+        [Authorize]
+        public async Task<IActionResult> AddTrackToPlaylist(Guid artistId, Guid playlistId)
+        {
+            return Ok(await _artistService.AddPlaylist(artistId, playlistId));
+        }
         [HttpPut]
+        [Authorize]
         public async Task<IActionResult> ModifyArtist(ArtistDto dto)
         {
             return Ok(await _artistService.ModifyArtist(dto));

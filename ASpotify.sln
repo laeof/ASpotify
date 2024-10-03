@@ -3,11 +3,16 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.11.35222.181
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ASpotifyAuth", "ASpotifyAuth\ASpotifyAuth.csproj", "{33EF05CC-268C-4180-8072-36D5D7960352}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ASpotifyAuth", "ASpotifyAuth\ASpotifyAuth.csproj", "{33EF05CC-268C-4180-8072-36D5D7960352}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ASpotifyPlaylists", "ASpotifyPlaylists\ASpotifyPlaylists.csproj", "{913D5FB8-4092-405C-8F4A-EE59D21B5B17}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ASpotifyPlaylists", "ASpotifyPlaylists\ASpotifyPlaylists.csproj", "{913D5FB8-4092-405C-8F4A-EE59D21B5B17}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ASpotifyGateway", "ASpotifyGateway\ASpotifyGateway.csproj", "{3BDD812B-B290-4026-9EE5-2FB319E49846}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ASpotifyGateway", "ASpotifyGateway\ASpotifyGateway.csproj", "{3BDD812B-B290-4026-9EE5-2FB319E49846}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Элементы решения", "Элементы решения", "{5B66EC21-01F2-4F13-87B8-0B30475FD345}"
+	ProjectSection(SolutionItems) = preProject
+		docker-compose.yml = docker-compose.yml
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

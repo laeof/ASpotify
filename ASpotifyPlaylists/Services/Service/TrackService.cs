@@ -8,61 +8,71 @@ namespace ASpotifyPlaylists.Services.Service
 {
     public class TrackService : ITrackService
     {
-        private readonly IPlaylistService _playlistService;
         private readonly DataManager _dataManager;
         private readonly ASpotifyDbContext _context;
         private readonly EntityMapper _entityMapper;
-        public TrackService(IPlaylistService playlistService, 
+        private readonly IMessageProducer _messageProducer;
+        private readonly ICacheService _cacheService;
+        public TrackService(
             DataManager dataManager,
             ASpotifyDbContext aSpotifyDbContext,
-            EntityMapper entityMapper)
+            EntityMapper entityMapper,
+            IMessageProducer messageProducer,
+            ICacheService cacheService)
         {
-            _playlistService = playlistService;
             _dataManager = dataManager;
             _context = aSpotifyDbContext;
             _entityMapper = entityMapper;
+            _messageProducer = messageProducer;
+            _cacheService = cacheService;
         }
-        public async Task<Track> CreateTrack(TrackDto dto)
+        public Task CreateTrack(List<TrackDto> dto)
         {
-            var track = new Track
+            foreach (var track in dto)
             {
-                Name = dto.Name,
-                AlbumId = dto.AlbumId,
-                ArtistId = dto.ArtistId,
-                Duration = dto.Duration,
-                ImagePath = dto.ImagePath,
-                UrlPath = dto.UrlPath,
-            };
+                var newentity = _entityMapper.MapDtoTrack(track);
+                newentity.CreatedDate = DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalMilliseconds;
 
-            //add to album
-            await _playlistService.AddToPlaylist(dto.AlbumId, track.Id);
+                _messageProducer.SendMessage(
+                        new MethodCreate<Track>(newentity, QueueNames.Track));
+            }
 
-            //add track
-            var newtrack = await _dataManager.Tracks.Create(track, _context.Tracks);
+            _messageProducer.SendMessage(
+                    new MethodAddTracksToPlaylist(
+                        dto.Select(x => x.Id).ToList(),
+                        dto[0].AlbumId));
 
-            return newtrack;
+            return Task.CompletedTask;
         }
 
         public async Task<Track> GetTrackById(Guid id)
         {
-            return await _dataManager.Tracks.GetById(id, _context.Tracks);
+            var entity = _cacheService.GetData<Track>(id);
+
+            if (entity == null)
+            {
+                entity = await _dataManager.Tracks.GetById(id, _context.Tracks);
+
+                if (entity.ImagePath.StartsWith("http://localhost:5283"))
+                    entity.ImagePath = entity.ImagePath.Replace("http://localhost:5283", "http://hope1ess.local:5283");
+
+                _messageProducer.SendMessage(
+                        new MethodUpdate<Track>(entity, QueueNames.Track));
+
+                _cacheService.SetData(id, entity);
+            }
+
+            return entity;
         }
 
-        public async Task<Track> ModifyTrack(TrackDto dto)
+        public Task ModifyTrack(TrackDto dto)
         {
-            var track = new Track();
+            var newentity = _entityMapper.MapDtoTrack(dto);
 
-            track.Id = dto.Id;
-            track.Name = dto.Name;
-            //track.AlbumId = dto.AlbumId;
-            track.ArtistId = dto.ArtistId;
-            track.Duration = dto.Duration;
-            track.ImagePath = dto.ImagePath;
-            track.UrlPath = dto.UrlPath;
-            track.UpdatedDate = track.CreatedDate;
-            track.CreatedDate = dto.CreatedDate;
+            _messageProducer.SendMessage(
+                   new MethodUpdate<Track>(newentity, QueueNames.Track));
 
-            return await _dataManager.Tracks.Modify(track, _context.Tracks);
+            return Task.CompletedTask;
         }
 
         public async Task<Track> DeleteTrack(Guid id)

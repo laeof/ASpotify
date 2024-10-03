@@ -1,7 +1,11 @@
-﻿namespace ASpotifyAuth.Services.Abstract
+﻿using ASpotifyAuth.Domain.Entities;
+
+namespace ASpotifyAuth.Services.Abstract
 {
     public interface IUserService
     {
-        string GetMyName();
+        Task<User> GetUser();
+        Task<User> GetUserById(Guid id);
+        Task<string> GetUsername();
     }
 }

@@ -2,6 +2,7 @@
 using ASpotifyAuth.Dto;
 using ASpotifyAuth.Services.Abstract;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -10,71 +11,140 @@ using System.Text;
 
 namespace ASpotifyAuth.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("[controller]")]
     [ApiController]
     public class AuthController : ControllerBase
     {
-
-        public AuthController(IConfiguration configuration,
-            IUserService userService, 
-            IPasswordHasherService passwordHasherService)
+        private readonly IUserService _userService;
+        private readonly IAccountService _accountService;
+        private readonly IJWTService _jwtService;
+        private readonly IPasswordHasherService _passwordHasher;
+        public AuthController(IUserService userService,
+            IPasswordHasherService passwordHasherService,
+            IAccountService accountService,
+            IJWTService jwtService)
         {
-            _configuration = configuration;
+            _userService = userService;
             _passwordHasher = passwordHasherService;
+            _accountService = accountService;
+            _jwtService = jwtService;
+        }
+        [HttpGet("email/{email}")]
+        public async Task<IActionResult> ValidEmail(string email)
+        {
+            if (email == string.Empty)
+                return BadRequest("String is empty");
+
+            return Ok(await _accountService.CheckExistsEmail(email));
+        }
+
+        [HttpGet("username/{username}")]
+        public async Task<IActionResult> ValidUsername(string username)
+        {
+            if (username == string.Empty)
+                return BadRequest("String is empty");
+
+            return Ok(await _accountService.CheckValidUsername(username));
         }
 
         [HttpPost("register")]
-        public ActionResult<User> Register(UserDto request)
+        public async Task<IActionResult> Register(RegisterDto request)
         {
-            string passwordHash
-                = _passwordHasher.Hash(request.Password);
+            var validEmail = _accountService.CheckValidEmail(request.Email);
 
-            user.Email = request.Email;
-            user.PasswordHash = passwordHash;
+            if (!validEmail)
+                return BadRequest("EmailValidationError:EmailNotValid");
 
-            return Ok(user);
+            validEmail = await _accountService.CheckExistsEmail(request.Email);
+
+            if (validEmail)
+                return BadRequest("EmailValidationError:AlreadyExists");
+
+            var validUsername = await _accountService.CheckValidUsername(request.Username);
+
+            if (validUsername)
+                return BadRequest("UsernameValidationError:AlreadyExists");
+
+            var newuser = _accountService.Register(request);
+
+            return Ok(newuser);
         }
 
         [HttpPost("login")]
-        public ActionResult<User> Login(UserDto request)
+        public async Task<IActionResult> Login(LoginDto request)
         {
-            if (user.Email != request.Email)
-            {
-                return BadRequest("User not found.");
-            }
+            var validEmail = _accountService.CheckValidEmail(request.Email);
 
-            if (!_passwordHasher.Verify(request.Password, user.PasswordHash))
-            {
-                return BadRequest("Wrong password.");
-            }
+            if (!validEmail)
+                return BadRequest("EmailValidationError:EmailNotValid");
 
-            string token = CreateToken(user);
+            validEmail = await _accountService.CheckExistsEmail(request.Email);
+
+            if (!validEmail)
+                return BadRequest("EmailValidationError:EmailDoesNotExists");
+
+            var validPassword = await _accountService.CheckValidPassword(request);
+
+            if (!validPassword)
+                return BadRequest("PasswordValidationError:PasswordIsNotCorrect");
+
+            var user = await _accountService.GetUserAsync(request);
+
+            var token = _jwtService.GenerateToken(user.Id);
+
+            if (token == null)
+                return Unauthorized("TokenGenerateError");
+
+            var tokens = new UserRefreshToken {
+                RefreshToken = token.RefreshToken,
+                UserId = user.Id,
+            };
+
+            await _accountService.AddUserRefreshTokens(tokens);
 
             return Ok(token);
         }
 
-        private string CreateToken(User user)
+        [HttpPost("refresh-token")]
+        public async Task<IActionResult> Refresh(Tokens token)
         {
-            List<Claim> claims = new List<Claim> {
-                new Claim(ClaimTypes.Name, user.UserName),
-                new Claim(ClaimTypes.Role, "Admin"),
-                new Claim(ClaimTypes.Role, "User"),
+            if (token.AccessToken == "" || token.RefreshToken == "")
+                return BadRequest("token cannot be null");
+
+            var principal = _jwtService.GetPrincipalFromExpiredToken(token.AccessToken);
+            var id = principal.Identity?.Name;
+
+            if(id == null)
+                return Unauthorized("Invalid attempt!");
+
+            var guid = Guid.Parse(id);
+
+            var savedRefreshToken = await _accountService.GetSavedRefreshTokens(guid, token.RefreshToken);
+
+            if (savedRefreshToken.RefreshToken != token.RefreshToken)
+                return Unauthorized("Invalid attempt!");
+
+            var newJwtToken = _jwtService.GenerateRefreshToken(guid);
+
+            if (newJwtToken == null)
+                return Unauthorized("Invalid attempt!");
+
+            UserRefreshToken obj = new UserRefreshToken
+            {
+                UserId = Guid.Parse(id),
+                RefreshToken = newJwtToken.RefreshToken,
             };
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
-                Environment.GetEnvironmentVariable("ASPNET_SECRETKEYSPOTIFY")!));
+            await _accountService.DeleteUserRefreshTokens(savedRefreshToken.Id, token.RefreshToken);
+            await _accountService.AddUserRefreshTokens(obj);
 
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature);
+            return Ok(newJwtToken);
+        }
 
-            var token = new JwtSecurityToken(
-                    claims: claims,
-                    expires: DateTime.Now.AddDays(1),
-                    signingCredentials: creds
-                );
-
-            var jwt = new JwtSecurityTokenHandler().WriteToken(token);
-
-            return jwt;
+        [HttpPost("access-expire")]
+        public IActionResult Access(string token)
+        {
+            return Ok(_jwtService.ExpireAccessToken(token));
         }
     }
 }

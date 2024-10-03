@@ -9,5 +9,6 @@ namespace ASpotifyPlaylists.Services.Abstract
         Task<Artist> GetArtistById(Guid id);
         Task<Artist> ModifyArtist(ArtistDto dto);
         Task<Artist> DeleteArtist(Guid id);
+        Task<Artist> AddPlaylist(Guid artistId, Guid playlistId);
     }
 }

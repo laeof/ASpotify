@@ -363,3 +363,6 @@ MigrationBackup/
 FodyWeavers.xsd
 
 **/ASpotifyPlaylists/Migrations/
+**/ASpotifyAuth/Migrations/
+**/Audio
+**/Image

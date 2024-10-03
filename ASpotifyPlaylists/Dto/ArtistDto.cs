@@ -3,7 +3,7 @@
     public class ArtistDto
     {
         public Guid Id { get; set; }
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public double CreatedDate { get; set; } = 0;
         public string UserName { get; set; } = string.Empty;
         public string FirstName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;

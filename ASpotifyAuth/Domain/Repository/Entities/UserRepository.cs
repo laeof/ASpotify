@@ -1,28 +1,25 @@
 ﻿using ASpotifyAuth.Domain.Entities;
 using ASpotifyAuth.Domain.Repository.Abstract;
+using Microsoft.EntityFrameworkCore;
 
 namespace ASpotifyAuth.Domain.Repository.Entities
 {
-    public class UserRepository : ICRUDRepository<User>
+    public class UserRepository: IUserRepository
     {
-        public Task<User> Create()
+        private readonly ASpotifyDbContext _context;
+        public UserRepository(ASpotifyDbContext context)
         {
-            throw new NotImplementedException();
+            _context = context;
         }
-
-        public Task<User> GetById()
+        //true - not valid
+        //false - valid
+        public async Task<bool> ValidUsername(string username)
         {
-            throw new NotImplementedException();
+            return await _context.Users.FirstOrDefaultAsync(x => x.UserName == username) != null;
         }
-
-        public Task<User> ModifyById()
+        public async Task<User?> ValidEmail(string email)
         {
-            throw new NotImplementedException();
-        }
-
-        public Task<User> RemoveById()
-        {
-            throw new NotImplementedException();
+            return await _context.Users.FirstOrDefaultAsync(x => x.Email == email);
         }
     }
 }
