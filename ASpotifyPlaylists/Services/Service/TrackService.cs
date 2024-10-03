@@ -13,7 +13,7 @@ namespace ASpotifyPlaylists.Services.Service
         private readonly EntityMapper _entityMapper;
         private readonly IMessageProducer _messageProducer;
         private readonly ICacheService _cacheService;
-        public TrackService( 
+        public TrackService(
             DataManager dataManager,
             ASpotifyDbContext aSpotifyDbContext,
             EntityMapper entityMapper,
@@ -39,7 +39,7 @@ namespace ASpotifyPlaylists.Services.Service
 
             _messageProducer.SendMessage(
                     new MethodAddTracksToPlaylist(
-                        dto.Select(x => x.Id).ToList(), 
+                        dto.Select(x => x.Id).ToList(),
                         dto[0].AlbumId));
 
             return Task.CompletedTask;
@@ -49,8 +49,16 @@ namespace ASpotifyPlaylists.Services.Service
         {
             var entity = _cacheService.GetData<Track>(id);
 
-            if (entity == null) {
+            if (entity == null)
+            {
                 entity = await _dataManager.Tracks.GetById(id, _context.Tracks);
+
+                if (entity.ImagePath.StartsWith("http://localhost:5283"))
+                    entity.ImagePath = entity.ImagePath.Replace("http://localhost:5283", "http://hope1ess.local:5283");
+
+                _messageProducer.SendMessage(
+                        new MethodUpdate<Track>(entity, QueueNames.Track));
+
                 _cacheService.SetData(id, entity);
             }
 

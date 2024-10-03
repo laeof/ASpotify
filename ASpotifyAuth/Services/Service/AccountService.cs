@@ -2,11 +2,6 @@
 using ASpotifyAuth.Domain.Entities;
 using ASpotifyAuth.Dto;
 using ASpotifyAuth.Services.Abstract;
-using Microsoft.AspNetCore.Components.Forms;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
 using System.Text.RegularExpressions;
 
 namespace ASpotifyAuth.Services.Service

@@ -15,3 +15,49 @@ services:
     image: redis
     ports:
       - '6379:6379'
+  spotify-media:
+    container_name: "spotify-media"
+    image: spotify-media
+    ports: 
+      - '5283:8080'
+    volumes:
+      - ./Audio:/app/Audio
+      - ./Image:/app/wwwroot/Image
+  spotify-playlists:
+    container_name: "spotify-playlists"
+    image: spotify-playlists
+    environment:
+      - ASPNET_SECRETKEYSPOTIFY=qweqweqweqweqweqweqweqweqweqweqweqwe
+      - ASPNETCORE_ASPOTIFY_DB_SERVER=172.16.0.0
+      - ASPNETCORE_ASPOTIFY_DB_PORT=5432
+      - ASPNETCORE_ASPOTIFY_DB_USER=postgres
+      - ASPNETCORE_ASPOTIFY_DB_PASS=bt7iC4nN07T0f1nDmyp4ss
+      - ASPNETCORE_ASPOTIFY_DB_NAME=Spotify
+      - ASPNETCORE_ASPOTIFY_RABBITMQ_HOSTNAME=rabbitmq
+      - ASPNETCORE_ASPOTIFY_RABBITMQ_USERNAME=user
+      - ASPNETCORE_ASPOTIFY_RABBITMQ_PASSWORD=pass
+      - ASPNETCORE_ASPOTIFY_REDIS_HOSTNAME=redis
+      - ASPNETCORE_ASPOTIFY_REDIS_PORT=6379
+    ports: 
+      - '5059:8080'
+  spotify-auth:
+    container_name: "spotify-auth"
+    image: spotify-auth
+    environment:
+      - ASPNET_SECRETKEYSPOTIFY=qweqweqweqweqweqweqweqweqweqweqweqwe
+      - ASPNETCORE_ASPOTIFY_DB_SERVER=172.16.0.0
+      - ASPNETCORE_ASPOTIFY_DB_PORT=5432
+      - ASPNETCORE_ASPOTIFY_DB_USER=postgres
+      - ASPNETCORE_ASPOTIFY_DB_PASS=bt7iC4nN07T0f1nDmyp4ss
+      - ASPNETCORE_ASPOTIFY_DB_NAME=Spotify
+      - ASPNETCORE_ASPOTIFY_RABBITMQ_HOSTNAME=rabbitmq
+      - ASPNETCORE_ASPOTIFY_RABBITMQ_USERNAME=user
+      - ASPNETCORE_ASPOTIFY_RABBITMQ_PASSWORD=pass
+    ports: 
+      - '5206:8080'
+  spotify-front:
+    container_name: "spotify-front"
+    image: spotify-front
+    ports: 
+      - '4200:4200'
+

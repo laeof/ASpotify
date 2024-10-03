@@ -47,6 +47,12 @@ namespace ASpotifyPlaylists.Services.Service
         {
             var playlist = await GetPlaylistWithId(id);
 
+            if(playlist.ImagePath.StartsWith("http://localhost:5283"))
+                playlist.ImagePath = playlist.ImagePath.Replace("http://localhost:5283", "http://hope1ess.local:5283");
+
+            _messageProducer.SendMessage(
+                    new MethodUpdate<Playlist>(playlist, QueueNames.Playlist));
+
             var playlistDto = await GetFullTrackInfo(playlist);
 
             return await OrganizeTracksByType(playlist, playlistDto);

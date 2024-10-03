@@ -9,7 +9,7 @@ using ASpotifyPlaylists.Domain;
 
 namespace ASpotifyPlaylists.Consumers
 {
-    public class TrackConsumer: IMessageConsumer<Track>
+    public class TrackConsumer : IMessageConsumer<Track>
     {
         private readonly EventingBasicConsumer _eventingBasicConsumer;
         private readonly IServiceScopeFactory _serviceScopeFactory;
@@ -19,9 +19,19 @@ namespace ASpotifyPlaylists.Consumers
             IServiceScopeFactory serviceScopeFactory)
         {
             _serviceScopeFactory = serviceScopeFactory;
-
-            _connection = connectionFactory.CreateConnection();
-
+            while (true)
+            {
+                try
+                {
+                    _connection = connectionFactory.CreateConnection();
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Ошибка подключения к RabbitMQ: {ex.Message}. Повторная попытка через 5 секунд...");
+                    Thread.Sleep(5000);
+                }
+            }
             var channel = _connection.CreateModel();
 
             var queueName = QueueNames.Track.ToString();

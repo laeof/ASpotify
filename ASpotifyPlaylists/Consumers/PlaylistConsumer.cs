@@ -23,8 +23,20 @@ namespace ASpotifyPlaylists.Consumers
         {
             _serviceScopeFactory = serviceScopeFactory;
 
-            _connection = connectionFactory.CreateConnection();
-
+            while (true)
+            {
+                try
+                {
+                    _connection = connectionFactory.CreateConnection();
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Ошибка подключения к RabbitMQ: {ex.Message}. Повторная попытка через 5 секунд...");
+                    Thread.Sleep(5000);
+                }
+            }
+            
             var channel = _connection.CreateModel();
 
             var queueName = QueueNames.Playlist.ToString();
